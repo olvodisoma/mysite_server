@@ -1,7 +1,8 @@
 import mysql from 'mysql';
 import bcrypt from 'bcryptjs';
 import { configDB } from '../configDB.js';
-import { upload } from '../cloudinary.js';
+import { upload,removeFromCloud } from '../cloudinary.js';
+import fs from 'fs';//filesystem module
 
 const db = mysql.createConnection(configDB)
 
@@ -89,17 +90,18 @@ export const register=(request,response)=>{
 }
 
 export const updateAvatar=async(request,response)=>{
-    const [username] = request.body
+    const {username,avatar_id} = request.body
     if(request.files){
         const {selFile} = request.files
         const cloudFile = await upload(selFile.tempFilePath)
         console.log(cloudFile)
-        db.query('update users set avatar=?,avatar_id=? where username=?',[cloudFile.url,cloudFile.public_id,username],(error,result)=>{
+        db.query('update users set avatar=?,avatar_id=? where username=?',[cloudFile.url,cloudFile.public_id,username],
+        (error,result)=>{
             if(error){
                 console.log(error)
             }
             else{
-                response.send({msg:"Sikeres módosítás!",avatar:cloudFile.url})
+                response.send({msg:"Sikeres módosítás!",avatar:cloudFile.url,avatar_id:cloudFile.public_id})
             }
         })
     }

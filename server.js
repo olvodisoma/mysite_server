@@ -8,7 +8,8 @@ app.use(cors());
 app.use(express.json());
 //engedélyezni kell egy temporális könyvtárat:
 app.use(fileUpload({
-    useTempFiles: true
+    useTempFiles: true,
+    tempFileDir:'/tmp/'
 }))
 
 
