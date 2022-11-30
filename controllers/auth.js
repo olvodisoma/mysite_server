@@ -23,7 +23,7 @@ const db = mysql.createConnection(configDB)
 export const login=(request,response)=>{
     console.log(request.body)
     const {username,password} = request.body
-    db.query('SELECT id,password FROM users WHERE username=?',[username],(error,result)=>{
+    db.query('SELECT id,password,email,avatar,avatar_id FROM users WHERE username=?',[username],(error,result)=>{
         if(error){
             console.log("Hiba",error)
         }
@@ -34,7 +34,8 @@ export const login=(request,response)=>{
                     response.send({error:"Hibás jelszó!"})
                 }
                 else{
-                    response.send({username:username,userId:result[0].id})
+                    response.send({username:username,id:result[0].id,email:result[0].email,
+                                    avatar:result[0].avatar,avatar_id:result[0].avatar_id})
                 }
             })
         }
