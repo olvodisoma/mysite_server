@@ -31,11 +31,14 @@ export const login=(request,response)=>{
             //console.log(result[0].password)
             bcrypt.compare(password,result[0].password,(error,resultCompare)=>{
                 if(error){
-                    response.send({error:"Hibás jelszó!"})
+                    response.send({error:"Server mistake!",error})
+                }
+                if(resultCompare){
+                    response.send({username:username,id:result[0].id,email:result[0].email,
+                    avatar:result[0].avatar,avatar_id:result[0].avatar_id})
                 }
                 else{
-                    response.send({username:username,id:result[0].id,email:result[0].email,
-                                    avatar:result[0].avatar,avatar_id:result[0].avatar_id})
+                    response.send({error:"Incorrect password/username"})
                 }
             })
         }
