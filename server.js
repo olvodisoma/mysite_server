@@ -9,7 +9,7 @@ app.use(express.json());
 //engedélyezni kell egy temporális könyvtárat:
 app.use(fileUpload({
     useTempFiles: true,
-    tempFileDir:'/tmp/'
+    /*tempFileDir:'/tmp/'*/
 }))
 
 

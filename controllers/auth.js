@@ -97,16 +97,43 @@ export const updateAvatar=async(request,response)=>{
     const {username,avatar_id} = request.body
     if(request.files){
         const {selFile} = request.files
+        console.log("selFile:",selFile)
         const cloudFile = await upload(selFile.tempFilePath)
         console.log(cloudFile)
         db.query('update users set avatar=?,avatar_id=? where username=?',[cloudFile.url,cloudFile.public_id,username],
         (error,result)=>{
             if(error){
                 console.log(error)
+                response.send({msg:"Hiba:",error})
             }
             else{
+                removeFromCloud(avatar_id)
+                removeTempFiles(selFile.tempFilePath)
                 response.send({msg:"Sikeres módosítás!",avatar:cloudFile.url,avatar_id:cloudFile.public_id})
             }
         })
     }
+}
+
+const removeTempFiles = path => {
+    console.log("A törlendő temporális fájlnak az útvonala",path)
+    fs.unlink(path, error => {
+        if (error) throw error
+    })
+}
+
+export const deleteUser=(request,response)=>{
+    console.log(request.body)
+    const {username,avatar_id} = request.body
+    console.log("Törlendő:",username,avatar_id)
+    db.query('DELETE FROM users WHERE username=?',[username],(error,result)=>{
+        if(error){
+            console.log("Hiba",error)
+        }
+        else{
+            console.log("Törlés eredmény:",result)
+            avatar_id && removeFromCloud(avatar_id)
+            response.send({msg:"Successful user profile delete!",username:username})
+        }
+    })
 }
