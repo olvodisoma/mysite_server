@@ -1,44 +1,39 @@
-import mysql from 'mysql';
-import bcrypt from 'bcryptjs';
-import { configDB } from '../configDB.js';
-import { upload,removeFromCloud } from '../cloudinary.js';
-import fs from 'fs';//filesystem module
+import mysql from "mysql";
+import bcrypt from "bcryptjs";
+import { configDB } from "../configDB.js";
+import { upload,removeFromCloud } from "../cloudinary.js";
+import fs from 'fs'
+import path from "path";
 
-const db = mysql.createConnection(configDB)
+const db=mysql.createConnection(configDB)
+//ideiglenes login:
 
-//IDEIGLENES LOGIN:
 /*export const login=(request,response)=>{
     console.log(request.body)
     const {username,password} = request.body
-    db.query('SELECT count(*) nr FROM users WHERE username=? and password=?',[username,password],(error,result)=>{
-        if(error){
-            console.log("Hiba",error)
-        }
-        else{
+    db.query('SELECT count(*) nr FROM `users` where username=? and password=?',[username,password],(err,result)=>{
+        if(err)
+            console.log('HIBA!',err)
+        else
             response.send({rowCount:result[0].nr,username:username})
-        }
     })
 }*/
 
 export const login=(request,response)=>{
     console.log(request.body)
     const {username,password} = request.body
-    db.query('SELECT id,password,email,avatar,avatar_id FROM users WHERE username=?',[username],(error,result)=>{
-        if(error){
-            console.log("Hiba",error)
-        }
+    db.query('SELECT id,password,email,avatar,avatar_id FROM `users` where username=?',[username],(err,result)=>{
+        if(err)
+            console.log('HIBA!',err)
         else{
-            //console.log(result[0].password)
-            bcrypt.compare(password,result[0].password,(error,resultCompare)=>{
-                if(error){
-                    response.send({error:"Server mistake!",error})
-                }
+            bcrypt.compare(password, result[0].password,(err,resultCompare)=>{
+                if(err)
+                    response.send({error:"ServerERROR!",err})
                 if(resultCompare){
-                    response.send({username:username,id:result[0].id,email:result[0].email,
-                    avatar:result[0].avatar,avatar_id:result[0].avatar_id})
+                    response.send({username:username,id:result[0].id,email:result[0].email,avatar:result[0].avatar,avatar_id:result[0].avatar_id})
                 }
                 else{
-                    response.send({error:"Incorrect password/username"})
+                    response.send({error:"Wrong password username pair!"})
                 }
             })
         }
@@ -48,92 +43,102 @@ export const login=(request,response)=>{
 export const checkEmail=(request,response)=>{
     console.log(request.body)
     const {email} = request.body
-    db.query('SELECT count(*) nr FROM users WHERE email=?',[email],(error,result)=>{
-        if(error){
-            console.log("Hiba",error)
-        }
-        else{
-            response.send({rowCount:result[0].nr,email:email})
-        }
+    db.query('SELECT count(*) nr FROM `users` where email=?',[email],(err,result)=>{
+        if(err)
+            console.log('HIBA!',err)
+        else
+        response.send({rowCount:result[0].nr,email:email})
     })
 }
+
 
 export const checkUsername=(request,response)=>{
     console.log(request.body)
     const {username} = request.body
-    db.query('SELECT count(*) nr FROM users WHERE username=?',[username],(error,result)=>{
-        if(error){
-            console.log("Hiba",error)
-        }
-        else{
+    db.query('SELECT count(*) nr FROM `users` where username=?',[username],(err,result)=>{
+        if(err)
+            console.log('HIBA!',err)
+        else
             response.send({rowCount:result[0].nr,username:username})
-        }
     })
 }
 
 const saltRound=10
 export const register=(request,response)=>{
     const {username,email,password} = request.body
-    bcrypt.hash(password,saltRound,(error,hashedPassword)=>{
-        if(error){
-            console.log("bcrypt hiba: ",error)
+    bcrypt.hash(password,saltRound,(err,hashedPassword)=>{
+        if(err){
+            console.log('BCRYPT HIBA!',err)
         }
         else{
-        db.query('INSERT INTO users (username,email,password) VALUES (?,?,?)',[username,email,hashedPassword],(error,result)=>{
-            if(error){
-                console.log("Hiba az insertnél!",error)
-                response.send({msg:"Sikertelen regisztráció!"})
-            }
-            else{
-                response.send({msg:"Sikeres regisztráció!",id:result.insertId})
-            }
-        })
-    }
+            db.query('INSERT INTO users (username,email,password) values (?,?,?)',[username,email,hashedPassword],(err,result)=>{
+                if(err){
+                    console.log('HIBA AZ INSERT-NÉL!',err)
+                    response.send({msg:'Registration failed!',id:result.insertId})
+                }
+                else
+                    response.send({msg:'Successful registration!',id:result.insertId})
+            })
+        }
     })
-
 }
 
-export const updateAvatar=async(request,response)=>{
-    const {username,avatar_id} = request.body
+export const updateAvatar=async (request,response)=>{
+    const {username,avatar_id}=request.body
     if(request.files){
         const {selFile} = request.files
-        console.log("selFile:",selFile)
+        console.log("Selected: ",selFile)
         const cloudFile = await upload(selFile.tempFilePath)
-        console.log(cloudFile)
-        db.query('update users set avatar=?,avatar_id=? where username=?',[cloudFile.url,cloudFile.public_id,username],
-        (error,result)=>{
-            if(error){
-                console.log(error)
-                response.send({msg:"Hiba:",error})
+        db.query('update users set avatar=?,avatar_id=? where username=?',[cloudFile.url,cloudFile.public_id,username],(err,result)=>{
+            if(err){
+                console.log('HIBA!',err)
+                response.send({msg:"Hiba: ",err})
             }
             else{
                 removeFromCloud(avatar_id)
-                removeTempFiles(selFile.tempFilePath)
-                response.send({msg:"Sikeres módosítás!",avatar:cloudFile.url,avatar_id:cloudFile.public_id})
+                removeTMPfiles(selFile.tempFilePath)
+                response.send({msg:"Sikeres módosítás",avatar:cloudFile.url,avatar_id:cloudFile.public_id})
             }
         })
     }
 }
 
-const removeTempFiles = path => {
-    console.log("A törlendő temporális fájlnak az útvonala",path)
-    fs.unlink(path, error => {
-        if (error) throw error
+const removeTMPfiles = path =>{
+    console.log("A törlendő temp file útvonala: ",path)
+    fs.unlink(path, err =>{
+        if(err) throw err
     })
 }
 
 export const deleteUser=(request,response)=>{
     console.log(request.body)
     const {username,avatar_id} = request.body
-    console.log("Törlendő:",username,avatar_id)
-    db.query('DELETE FROM users WHERE username=?',[username],(error,result)=>{
-        if(error){
-            console.log("Hiba",error)
+    db.query('DELETE FROM `users` where username=?',[username],(err,result)=>{
+        if(err)
+            console.log('HIBA!',err)
+        else{
+            console.log("Törlés eredménye: ",result)
+            avatar_id && removeFromCloud(avatar_id)
+            response.send({msg:"Sikeresen törölte a felhasználóját!",username:username})
+        }
+            
+    })
+}
+
+export const changePassword=(request,response)=>{
+    const {password,username} = request.body
+    bcrypt.hash(password,saltRound,(err,hashedPassword)=>{
+        if(err){
+            console.log('BCRYPT HIBA!',err)
         }
         else{
-            console.log("Törlés eredmény:",result)
-            avatar_id && removeFromCloud(avatar_id)
-            response.send({msg:"Successful user profile delete!",username:username})
+            db.query('update users SET password=? where username=?;',[hashedPassword,username],(err,result)=>{
+                if(err){
+                    response.send({msg:'Password not changed!'})
+                }
+                else
+                    response.send({msg:'Successful changed password!'})
+            })
         }
     })
 }
