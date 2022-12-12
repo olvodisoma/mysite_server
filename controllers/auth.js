@@ -22,7 +22,7 @@ const db=mysql.createConnection(configDB)
 export const login=(request,response)=>{
     console.log(request.body)
     const {username,password} = request.body
-    db.query('SELECT id,password,email,avatar,avatar_id FROM `users` where username=?',[username],(err,result)=>{
+    db.query('SELECT id,password,email,avatar,avatar_id,role FROM `users` where username=?',[username],(err,result)=>{
         if(err)
             console.log('HIBA!',err)
         else{
@@ -30,7 +30,8 @@ export const login=(request,response)=>{
                 if(err)
                     response.send({error:"ServerERROR!",err})
                 if(resultCompare){
-                    response.send({username:username,id:result[0].id,email:result[0].email,avatar:result[0].avatar,avatar_id:result[0].avatar_id})
+                    response.send({username:username,id:result[0].id,email:result[0].email,
+                        avatar:result[0].avatar,avatar_id:result[0].avatar_id,role:result[0].role})
                 }
                 else{
                     response.send({error:"Wrong password username pair!"})
